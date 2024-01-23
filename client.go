@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 )
+
+var started bool
 
 // Client --
 func Client() {
@@ -24,6 +28,8 @@ func register() {
 	remote, _ := net.ResolveUDPAddr("udp", signalAddress)
 	local, _ := net.ResolveUDPAddr("udp", localAddress)
 	conn, _ := net.ListenUDP("udp", local)
+	localAddr1 := conn.LocalAddr().(*net.UDPAddr)
+	fmt.Println("[localaddr]", localAddr1)
 	go func() {
 		bytesWritten, err := conn.WriteTo([]byte("register"), remote)
 		if err != nil {
@@ -33,7 +39,9 @@ func register() {
 		fmt.Println(bytesWritten, " bytes written")
 	}()
 
+	started = false
 	listen(conn, local.String())
+
 }
 
 func listen(conn *net.UDPConn, local string) {
@@ -45,10 +53,48 @@ func listen(conn *net.UDPConn, local string) {
 			fmt.Println("[ERROR]", err)
 			continue
 		}
-
-		fmt.Println("[INCOMING]", string(buffer[0:bytesRead]))
-		if string(buffer[0:bytesRead]) == "Hello!" {
+		text := string(buffer[0:bytesRead])
+		fmt.Println("[INCOMING]", text)
+		if text == "Hello!" {
 			continue
+		}
+		fmt.Println("[started]", started)
+		if !started {
+			started = true
+			if os.Args[4] == "master" {
+				cmd := exec.Command("ffplay", "udp://"+text)
+				//stdout, err := cmd.StdoutPipe()
+				//cmd.Stderr = cmd.Stdout
+				if err != nil {
+					panic(err)
+				}
+				if err = cmd.Start(); err != nil {
+					panic(err)
+				}
+				// for {
+				// 	tmp := make([]byte, 1024)
+				// 	_, err := stdout.Read(tmp)
+				// 	fmt.Print(string(tmp))
+				// 	if err != nil {
+				// 		break
+				// 	}
+				// }
+			} else {
+				fmt.Println("[send video] to", text)
+				grab_method := "gdigrab"
+				if runtime.GOOS != "windows" {
+					grab_method = "x11grab"
+				}
+				cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", ":0.0+0,0", "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://"+text)
+				//stdout, err := cmd.StdoutPipe()
+				//cmd.Stderr = cmd.Stdout
+				if err != nil {
+					panic(err)
+				}
+				if err = cmd.Start(); err != nil {
+					panic(err)
+				}
+			}
 		}
 
 		for _, a := range strings.Split(string(buffer[0:bytesRead]), ",") {
