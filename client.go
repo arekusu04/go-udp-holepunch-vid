@@ -63,7 +63,7 @@ func listen(conn *net.UDPConn, local string) {
 			started = true
 			if os.Args[4] == "master" {
 				fmt.Println("[start ffplay for ]", "udp://"+text)
-				cmd := exec.Command("ffplay", "udp://"+text)
+				cmd := exec.Command("ffplay", "udp://"+"localhost:4545")
 				//stdout, err := cmd.StdoutPipe()
 				//cmd.Stderr = cmd.Stdout
 				if err != nil {
