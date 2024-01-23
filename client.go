@@ -56,7 +56,7 @@ func listen(conn *net.UDPConn, local string) {
 
 		for _, a := range strings.Split(string(buffer[0:bytesRead]), ",") {
 			if a != local {
-				go chatter(conn, a)
+				go chatter(conn, a, local)
 			}
 		}
 		if os.Args[4] == "master" {
@@ -104,10 +104,10 @@ func listen(conn *net.UDPConn, local string) {
 	}
 }
 
-func chatter(conn *net.UDPConn, remote string) {
+func chatter(conn *net.UDPConn, remote string, local string) {
 	addr, _ := net.ResolveUDPAddr("udp", remote)
 	for {
-		conn.WriteTo([]byte("Hello!"), addr)
+		conn.WriteTo([]byte("Hello from "+local+"!"), addr)
 		fmt.Println("sent Hello! to ", remote)
 		time.Sleep(5 * time.Second)
 	}
