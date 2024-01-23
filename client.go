@@ -49,6 +49,7 @@ func listen(conn *net.UDPConn, local string) {
 		}
 
 		fmt.Println("[INCOMING]", string(buffer[0:bytesRead]))
+		fmt.Printf("connection %+v\n", conn)
 		if string(buffer[0:bytesRead]) == "Hello!" {
 			continue
 		}
@@ -83,12 +84,12 @@ func listen(conn *net.UDPConn, local string) {
 			}
 			cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", ":0.0+0,0", "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://192.168.2.7:6666")
 			stdout, err := cmd.StdoutPipe()
-			cmd.Stderr = cmd.Stdout
+			//cmd.Stderr = cmd.Stdout
 			if err != nil {
-				//return err
+				panic(err)
 			}
 			if err = cmd.Start(); err != nil {
-				//return err
+				panic(err)
 			}
 			for {
 				tmp := make([]byte, 1024)
