@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -12,4 +13,8 @@ func main() {
 	case "s":
 		Server()
 	}
+
+	defer func() {
+		fmt.Println("cleanup")
+	}()
 }
