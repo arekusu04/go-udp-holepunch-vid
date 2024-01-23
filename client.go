@@ -62,7 +62,7 @@ func listen(conn *net.UDPConn, local string) {
 		if os.Args[4] == "master" {
 			cmd := exec.Command("ffplay", "udp://192.168.2.7:6666")
 			stdout, err := cmd.StdoutPipe()
-			cmd.Stderr = cmd.Stdout
+			//cmd.Stderr = cmd.Stdout
 			if err != nil {
 				panic(err)
 			}
