@@ -62,10 +62,10 @@ func listen(conn *net.UDPConn, local string) {
 			stdout, err := cmd.StdoutPipe()
 			cmd.Stderr = cmd.Stdout
 			if err != nil {
-				//return err
+				panic(err)
 			}
 			if err = cmd.Start(); err != nil {
-				//return err
+				panic(err)
 			}
 			for {
 				tmp := make([]byte, 1024)
