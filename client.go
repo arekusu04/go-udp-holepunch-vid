@@ -78,7 +78,7 @@ func listen(conn *net.UDPConn, local string) {
 			}
 		} else {
 			grab_method := "gdigrab"
-			if runtime.GOOS == "windows" {
+			if runtime.GOOS != "windows" {
 				grab_method = "x11grab"
 			}
 			cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", ":0.0+0,0", "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://192.168.2.7:6666")
