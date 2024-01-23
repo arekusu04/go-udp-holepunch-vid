@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -56,6 +57,44 @@ func listen(conn *net.UDPConn, local string) {
 				go chatter(conn, a)
 			}
 		}
+		if os.Args[4] == "master" {
+			cmd := exec.Command("ffplay", "udp://192.168.2.7:6666")
+			stdout, err := cmd.StdoutPipe()
+			cmd.Stderr = cmd.Stdout
+			if err != nil {
+				//return err
+			}
+			if err = cmd.Start(); err != nil {
+				//return err
+			}
+			for {
+				tmp := make([]byte, 1024)
+				_, err := stdout.Read(tmp)
+				fmt.Print(string(tmp))
+				if err != nil {
+					break
+				}
+			}
+		} else {
+			cmd := exec.Command("ffmpeg", "-f", "x11grab", "-video_size", "1024x768", "-framerate", "30", "-i", ":0.0+0,0", "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://192.168.2.7:6666")
+			stdout, err := cmd.StdoutPipe()
+			cmd.Stderr = cmd.Stdout
+			if err != nil {
+				//return err
+			}
+			if err = cmd.Start(); err != nil {
+				//return err
+			}
+			for {
+				tmp := make([]byte, 1024)
+				_, err := stdout.Read(tmp)
+				fmt.Print(string(tmp))
+				if err != nil {
+					break
+				}
+			}
+		}
+
 	}
 }
 
