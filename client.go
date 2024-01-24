@@ -86,7 +86,7 @@ func listen(conn *net.UDPConn, local string) {
 				started = true
 				fmt.Println("[send video] to", text)
 				grab_method := "gdigrab"
-				area := desktop
+				area := "desktop"
 				if runtime.GOOS != "windows" {
 					grab_method = "x11grab"
 					area = ":0.0+0,0"
