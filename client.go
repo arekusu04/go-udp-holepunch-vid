@@ -86,10 +86,12 @@ func listen(conn *net.UDPConn, local string) {
 				started = true
 				fmt.Println("[send video] to", text)
 				grab_method := "gdigrab"
+				area := desktop
 				if runtime.GOOS != "windows" {
 					grab_method = "x11grab"
+					area = ":0.0+0,0"
 				}
-				cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", ":0.0+0,0", "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://"+text)
+				cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", area, "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://"+text)
 				//stdout, err := cmd.StdoutPipe()
 				//cmd.Stderr = cmd.Stdout
 				if err != nil {
