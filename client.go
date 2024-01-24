@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+var localAddress string
 var started bool
 
 // Client --
@@ -20,7 +21,7 @@ func Client() {
 func register() {
 	signalAddress := os.Args[2]
 
-	localAddress := ":9595" // default port
+	localAddress = ":9595" // default port
 	if len(os.Args) > 3 {
 		localAddress = os.Args[3]
 	}
@@ -55,15 +56,15 @@ func listen(conn *net.UDPConn, local string) {
 		}
 		text := string(buffer[0:bytesRead])
 		fmt.Println("[INCOMING]", text)
-		if text == "Hello!" {
+		if strings.HasPrefix(text,"Hello!") {
 			continue
 		}
 		fmt.Println("[started]", started)
 		if !started {
 			started = true
 			if os.Args[4] == "master" {
-				fmt.Println("[start ffplay for ]", "udp://"+text)
-				cmd := exec.Command("ffplay", "udp://"+"localhost:4545")
+				fmt.Println("[start ffplay for ]", "udp://"+"localhost"+localAddress)
+				cmd := exec.Command("ffplay", "udp://"+"127.0.0.1"+localAddress)
 				//stdout, err := cmd.StdoutPipe()
 				//cmd.Stderr = cmd.Stdout
 				if err != nil {
@@ -109,7 +110,7 @@ func listen(conn *net.UDPConn, local string) {
 func chatter(conn *net.UDPConn, remote string) {
 	addr, _ := net.ResolveUDPAddr("udp", remote)
 	for {
-		conn.WriteTo([]byte("Hello!"), addr)
+		conn.WriteTo([]byte("Hello! +remote"), addr)
 		fmt.Println("sent Hello! to ", remote)
 		time.Sleep(5 * time.Second)
 	}
