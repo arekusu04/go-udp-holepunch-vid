@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-var localAddress string
 var started bool
+var localAddrUHP string
 
 // Client --
 func Client() {
@@ -21,7 +21,7 @@ func Client() {
 func register() {
 	signalAddress := os.Args[2]
 
-	localAddress = ":9595" // default port
+	localAddress := ":9595" // default port
 	if len(os.Args) > 3 {
 		localAddress = os.Args[3]
 	}
@@ -52,19 +52,10 @@ func listen(conn *net.UDPConn, local string) {
 		bytesRead, err := conn.Read(buffer)
 		if err != nil {
 			fmt.Println("[ERROR]", err)
-			continue
-		}
-		text := string(buffer[0:bytesRead])
-		fmt.Println("[INCOMING]", text)
-		if strings.HasPrefix(text, "Hello!") {
-			continue
-		}
-		fmt.Println("[started]", started)
-		if !started {
-			started = true
-			if os.Args[4] == "master" {
-				fmt.Println("[start ffplay for ]", "udp://"+"localhost"+localAddress)
-				cmd := exec.Command("ffplay", "udp://"+"127.0.0.1"+localAddress)
+			if !started && os.Args[4] == "master" {
+				started = true
+				fmt.Println("[start ffplay for ]", "udp://"+"localhost"+localAddrUHP)
+				cmd := exec.Command("ffplay", "udp://"+"127.0.0.1"+localAddrUHP)
 				//stdout, err := cmd.StdoutPipe()
 				//cmd.Stderr = cmd.Stdout
 				if err != nil {
@@ -81,7 +72,20 @@ func listen(conn *net.UDPConn, local string) {
 				// 		break
 				// 	}
 				// }
-			} else {
+			}
+			continue
+		}
+		text := string(buffer[0:bytesRead])
+		fmt.Println("[INCOMING]", text)
+		if strings.HasPrefix(text, "Hello!") {
+			fmt.Println(strings.Split(text, "!"))
+			continue
+		}
+		fmt.Println("[started]", started)
+		if !started {
+			if os.Args[4] == "slave" {
+
+				started = true
 				fmt.Println("[send video] to", text)
 				grab_method := "gdigrab"
 				if runtime.GOOS != "windows" {
