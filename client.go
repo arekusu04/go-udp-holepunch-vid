@@ -52,10 +52,15 @@ func listen(conn *net.UDPConn, local string) {
 		bytesRead, err := conn.Read(buffer)
 		if err != nil {
 			fmt.Println("[ERROR]", err)
+		}
+		text := string(buffer[0:bytesRead])
+		fmt.Println("[INCOMING]", text)
+		if strings.HasPrefix(text, "Hello!") {
+			localAddrUHP = strings.Split(text, "!")[1]
 			if !started && os.Args[4] == "master" {
 				started = true
-				fmt.Println("[start ffplay for ]", "udp://"+"localhost"+localAddrUHP)
-				cmd := exec.Command("ffplay", "udp://"+"127.0.0.1"+localAddrUHP)
+				fmt.Println("[start ffplay for ]", "udp://"+localAddrUHP)
+				cmd := exec.Command("ffplay", "udp://"+localAddrUHP)
 				//stdout, err := cmd.StdoutPipe()
 				//cmd.Stderr = cmd.Stdout
 				if err != nil {
@@ -75,16 +80,9 @@ func listen(conn *net.UDPConn, local string) {
 			}
 			continue
 		}
-		text := string(buffer[0:bytesRead])
-		fmt.Println("[INCOMING]", text)
-		if strings.HasPrefix(text, "Hello!") {
-			fmt.Println(strings.Split(text, "!"))
-			continue
-		}
 		fmt.Println("[started]", started)
 		if !started {
 			if os.Args[4] == "slave" {
-
 				started = true
 				fmt.Println("[send video] to", text)
 				grab_method := "gdigrab"
