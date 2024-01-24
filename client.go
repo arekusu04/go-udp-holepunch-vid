@@ -56,7 +56,7 @@ func listen(conn *net.UDPConn, local string) {
 		}
 		text := string(buffer[0:bytesRead])
 		fmt.Println("[INCOMING]", text)
-		if strings.HasPrefix(text,"Hello!") {
+		if strings.HasPrefix(text, "Hello!") {
 			continue
 		}
 		fmt.Println("[started]", started)
@@ -110,7 +110,7 @@ func listen(conn *net.UDPConn, local string) {
 func chatter(conn *net.UDPConn, remote string) {
 	addr, _ := net.ResolveUDPAddr("udp", remote)
 	for {
-		conn.WriteTo([]byte("Hello! +remote"), addr)
+		conn.WriteTo([]byte("Hello!"+remote), addr)
 		fmt.Println("sent Hello! to ", remote)
 		time.Sleep(5 * time.Second)
 	}
