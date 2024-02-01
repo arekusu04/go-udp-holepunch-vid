@@ -12,6 +12,7 @@ import (
 
 var started bool
 var localAddrUHP string
+var remote string
 
 // Client --
 func Client() {
@@ -57,10 +58,33 @@ func listen(conn *net.UDPConn, local string) {
 		fmt.Println("[INCOMING]", text)
 		if strings.HasPrefix(text, "Hello!") {
 			localAddrUHP = strings.Split(text, "!")[1]
-			if !started && os.Args[4] == "master" {
+			continue
+		}
+		fmt.Println("[started]", started)
+		if !started {
+			if os.Args[4] == "slave" {
+				started = true
+				fmt.Println("[send video] to", text)
+				grab_method := "gdigrab"
+				area := "desktop"
+				if runtime.GOOS != "windows" {
+					grab_method = "x11grab"
+					area = ":0.0+0,0"
+				}
+				remote = text
+				cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", area, "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://"+text)
+				//stdout, err := cmd.StdoutPipe()
+				//cmd.Stderr = cmd.Stdout
+				if err != nil {
+					panic(err)
+				}
+				if err = cmd.Start(); err != nil {
+					panic(err)
+				}
+			} else {
 				started = true
 				fmt.Println("[start ffplay for ]", "udp://"+localAddrUHP)
-				cmd := exec.Command("ffplay", "udp://"+localAddrUHP)
+				cmd := exec.Command("ffmpeg", "-i", "udp://"+remote, "udp://"+localAddrUHP)
 				//stdout, err := cmd.StdoutPipe()
 				//cmd.Stderr = cmd.Stdout
 				if err != nil {
@@ -77,29 +101,6 @@ func listen(conn *net.UDPConn, local string) {
 				// 		break
 				// 	}
 				// }
-			}
-			continue
-		}
-		fmt.Println("[started]", started)
-		if !started {
-			if os.Args[4] == "slave" {
-				started = true
-				fmt.Println("[send video] to", text)
-				grab_method := "gdigrab"
-				area := "desktop"
-				if runtime.GOOS != "windows" {
-					grab_method = "x11grab"
-					area = ":0.0+0,0"
-				}
-				cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", area, "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://"+text)
-				//stdout, err := cmd.StdoutPipe()
-				//cmd.Stderr = cmd.Stdout
-				if err != nil {
-					panic(err)
-				}
-				if err = cmd.Start(); err != nil {
-					panic(err)
-				}
 			}
 		}
 
