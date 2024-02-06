@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -59,34 +61,29 @@ func listen(conn *net.UDPConn, local string) {
 		if strings.HasPrefix(text, "Hello!") {
 			localAddrUHP = strings.Split(text, "!")[1]
 			continue
+		} else {
+			if !started && os.Args[4] != "slave" {
+				remote = text
+				fmt.Println("remote=", remote)
+			}
+
 		}
 		fmt.Println("[started]", started)
 		if !started {
 			if os.Args[4] == "slave" {
 				started = true
 				fmt.Println("[send video] to", text)
+
+				go startReadFromFifo(conn)
 				grab_method := "gdigrab"
 				area := "desktop"
 				if runtime.GOOS != "windows" {
 					grab_method = "x11grab"
-					area = ":0.0+0,0"
+					area = ":1.0+0,0"
 				}
-				remote = text
-				cmd := exec.Command("ffmpeg", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", area, "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", "udp://"+text)
-				//stdout, err := cmd.StdoutPipe()
-				//cmd.Stderr = cmd.Stdout
-				if err != nil {
-					panic(err)
-				}
-				if err = cmd.Start(); err != nil {
-					panic(err)
-				}
-			} else {
-				started = true
-				fmt.Println("[start ffplay for ]", "udp://"+localAddrUHP)
-				cmd := exec.Command("ffmpeg", "-i", "udp://"+remote, "udp://"+localAddrUHP)
-				//stdout, err := cmd.StdoutPipe()
-				//cmd.Stderr = cmd.Stdout
+				cmd := exec.Command("ffmpeg", "-y", "-f", grab_method, "-video_size", "1024x768", "-framerate", "30", "-i", area, "-vcodec", "mpeg4", "-q", "12", "-f", "mpegts", "-hls_list_size", "0", filepath.FromSlash("test"))
+				// stdout, err := cmd.StdoutPipe()
+				// cmd.Stderr = cmd.Stdout
 				if err != nil {
 					panic(err)
 				}
@@ -101,6 +98,30 @@ func listen(conn *net.UDPConn, local string) {
 				// 		break
 				// 	}
 				// }
+
+			} else {
+				if len(remote) > 0 {
+					started = true
+					fmt.Println("[start ffplay for ]", "udp://"+localAddrUHP, "udp://"+remote)
+					cmd := exec.Command("ffmpeg", "-i", "udp://"+remote, "-crf", "30", "-preset", "ultrafast", "-acodec", "aac", "-ar", "44100", "-vcodec", "libx264", "-f", "mpegts", "udp://"+"127.0.0.1:6666")
+					// stdout, err := cmd.StdoutPipe()
+					// cmd.Stderr = cmd.Stdout
+					if err != nil {
+						panic(err)
+					}
+					if err = cmd.Start(); err != nil {
+						panic(err)
+					}
+					// for {
+					// 	tmp := make([]byte, 1024)
+					// 	_, err := stdout.Read(tmp)
+					// 	fmt.Print(string(tmp))
+					// 	if err != nil {
+					// 		break
+					// 	}
+					// }
+				}
+
 			}
 		}
 
@@ -110,6 +131,39 @@ func listen(conn *net.UDPConn, local string) {
 			}
 		}
 	}
+}
+
+func startReadFromFifo(conn *net.UDPConn) {
+	fmt.Println("Starting read operation")
+	fifoFile := "test"
+	pipe, err := os.OpenFile(fifoFile, os.O_RDONLY, 0640)
+	if err != nil {
+		fmt.Println("Couldn't open pipe with error: ", err)
+	}
+	defer pipe.Close()
+
+	// Read the content of named pipe
+	reader := bufio.NewReader(pipe)
+	fmt.Println("READER >> created")
+
+	// Infinite loop
+	for {
+		line, err := reader.ReadBytes('\n')
+		fmt.Println("send line", string(line))
+		// Close the pipe once EOF is reached
+		if err != nil {
+			fmt.Println("FINISHED!")
+			os.Exit(0)
+		}
+		sendStream(conn, line)
+
+	}
+}
+
+func sendStream(conn *net.UDPConn, buff []byte) {
+	addr, _ := net.ResolveUDPAddr("udp", remote)
+	fmt.Println("send stream")
+	conn.WriteTo(buff, addr)
 }
 
 func chatter(conn *net.UDPConn, remote string) {
