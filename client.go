@@ -126,13 +126,14 @@ func listen(conn *net.UDPConn, local string) {
 
 				}
 			}
-			for _, a := range strings.Split(string(buffer[0:bytesRead]), ",") {
-				if a != local {
-					go chatter(conn, a)
-				}
-			}
+
 		} else {
 			fmt.Println("take stream data ")
+		}
+		for _, a := range strings.Split(string(buffer[0:bytesRead]), ",") {
+			if a != local {
+				go chatter(conn, a)
+			}
 		}
 
 	}
