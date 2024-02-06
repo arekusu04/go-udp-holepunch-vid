@@ -131,6 +131,8 @@ func listen(conn *net.UDPConn, local string) {
 					go chatter(conn, a)
 				}
 			}
+		} else {
+			fmt.Println("take stream data ")
 		}
 
 	}
